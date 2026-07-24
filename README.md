@@ -29,11 +29,13 @@ Nincs neon/lila, sötét dashboard vagy dekoratív 3D UI.
 
 ## Animáció-stack (flotta-szabvány)
 
-Minden webes projekt alapértelmezett animáció/scroll-stackje: **`framer-motion` + `lenis`**
-(Janos döntése, 2026-07-24) — buttery-smooth momentum-görgetés + elemenként késleltetett
-(staggered) fade+slide-up appear-animációk.
+Minden webes projekt alapértelmezett animáció/scroll-stackje: **saját könnyű `Reveal`
+(IntersectionObserver, 0 külső lib) + `lenis`** (Janos döntése, 2026-07-24) —
+buttery-smooth momentum-görgetés + elemenként késleltetett (staggered) fade+slide-up
+appear-animációk. **NEM `framer-motion`** (kevesebb JS, jobb Lighthouse).
 
-- Új szekció/feature: **ezzel épül** (Lenis + Framer Motion `whileInView`, staggered delay).
+- Új szekció/feature: **ezzel épül** (Lenis + IntersectionObserver Reveal, staggered
+  CSS `transition-delay`).
 - `prefers-reduced-motion` kötelező tisztelet.
 
 ## Fejlesztés
