@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Star, ArrowRight, Play, MessageSquare, Clock, BarChart3, UserPlus, Send, MousePointerClick, Link2, ShieldCheck, Check } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
 
 const TRUST = [
   { icon: MessageSquare, title: "SMS és e-mail egy helyen", desc: "Személyes kérés a te nevedben, pár érintéssel." },
@@ -74,14 +75,14 @@ export default function Home() {
       {/* Trust */}
       <section className="mx-auto w-full max-w-6xl px-5 pb-8 sm:px-8">
         <div className="grid gap-4 sm:grid-cols-3">
-          {TRUST.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="glass flex items-start gap-3 p-4">
+          {TRUST.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal key={title} delay={i * 90} className="glass flex items-start gap-3 p-4">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-btn)] bg-cyan-soft text-blue"><Icon className="h-5 w-5" strokeWidth={2} /></span>
               <div>
                 <p className="font-bold text-ink">{title}</p>
                 <p className="mt-0.5 text-[13px] leading-relaxed text-ink-2">{desc}</p>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -92,14 +93,14 @@ export default function Home() {
         <p className="mx-auto mt-3 max-w-md text-center text-[15px] text-ink-2">A kérés indítása nem igényel technikai tudást.</p>
         <div className="mt-9 grid gap-5 sm:grid-cols-3">
           {STEPS.map(({ icon: Icon, title, desc }, i) => (
-            <div key={title} className="glass p-6">
+            <Reveal key={title} delay={i * 90} className="glass p-6">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-btn)] bg-cyan-soft text-blue"><Icon className="h-6 w-6" strokeWidth={2} /></span>
                 <span className="text-2xl font-extrabold text-cyan">{i + 1}</span>
               </div>
               <p className="mt-4 text-[17px] font-bold text-ink">{title}</p>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-2">{desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -107,12 +108,12 @@ export default function Home() {
       {/* Funkciók */}
       <section className="mx-auto w-full max-w-6xl px-5 pb-14 sm:px-8">
         <div className="grid gap-5 sm:grid-cols-2">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="glass p-6">
+          {FEATURES.map(({ icon: Icon, title, desc }, i) => (
+            <Reveal key={title} delay={i * 90} className="glass p-6">
               <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-btn)] bg-cyan-soft text-blue"><Icon className="h-6 w-6" strokeWidth={2} /></span>
               <p className="mt-4 text-[17px] font-bold text-ink">{title}</p>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-2">{desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
