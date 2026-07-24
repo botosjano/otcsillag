@@ -19,7 +19,7 @@ export default function Page() {
       {/* Desktop: táblázat-szerű; mobil: kártyák */}
       <div className="glass divide-y divide-line">
         {REQUESTS.map((r) => (
-          <div key={r.id} className="flex items-center gap-4 px-4 py-4">
+          <Link key={r.id} href={`/app/keresek/${r.id}`} className="flex items-center gap-4 px-4 py-4 first:rounded-t-[var(--radius-card)] last:rounded-b-[var(--radius-card)] hover:bg-cyan-soft/40">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-soft text-sm font-bold text-blue">
               {r.name.slice(0, 1)}
             </span>
@@ -31,7 +31,7 @@ export default function Page() {
               </p>
             </div>
             <StatusBadge status={r.status} />
-          </div>
+          </Link>
         ))}
       </div>
 
