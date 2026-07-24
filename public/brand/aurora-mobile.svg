@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="pearl" x1="14" y1="0" x2="390" y2="844" gradientUnits="userSpaceOnUse"><stop stop-color="#FBFDFF"/><stop offset=".55" stop-color="#F4F2FC"/><stop offset="1" stop-color="#EEF9FD"/></linearGradient>
+    <radialGradient id="cyan" cx="0" cy="0" r="1" gradientTransform="matrix(290 0 0 230 18 556)" gradientUnits="userSpaceOnUse"><stop stop-color="#5EE8EF" stop-opacity=".3"/><stop offset="1" stop-color="#7FE9EF" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gold" cx="0" cy="0" r="1" gradientTransform="matrix(170 0 0 150 342 394)" gradientUnits="userSpaceOnUse"><stop stop-color="#E6B45D" stop-opacity=".13"/><stop offset="1" stop-color="#E6B45D" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ray" x1="-70" y1="760" x2="468" y2="438" gradientUnits="userSpaceOnUse"><stop stop-color="#74ECF1" stop-opacity="0"/><stop offset=".4" stop-color="#35D9E5" stop-opacity=".62"/><stop offset=".75" stop-color="#057DB8" stop-opacity=".34"/><stop offset="1" stop-color="#E7B65D" stop-opacity="0"/></linearGradient>
+  </defs>
+  <path fill="url(#pearl)" d="M0 0h390v844H0z"/><ellipse cx="18" cy="556" rx="290" ry="230" fill="url(#cyan)"/><ellipse cx="342" cy="394" rx="170" ry="150" fill="url(#gold)"/>
+  <g stroke="url(#ray)" stroke-linecap="round"><path d="M-96 704C21 548 111 715 212 585S345 438 485 501" stroke-width="1.6"/><path d="M-62 748C53 606 147 736 253 590S377 475 467 537" opacity=".56"/><path d="M9 782C104 650 183 730 277 591S389 516 451 565" opacity=".32"/></g>
+  <ellipse cx="306" cy="414" rx="84" ry="66" fill="white" fill-opacity=".12" stroke="#67DCE8" stroke-opacity=".16"/>
+  <circle cx="202" cy="589" r="2.5" fill="#E5B25A"/><circle cx="341" cy="466" r="2.3" fill="#E5B25A"/>
+  <path d="M346 307h1.6v22H346zM336 317h22v1.6h-22z" fill="#E6B45D" opacity=".46"/>
+</svg>
