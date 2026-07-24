@@ -1,5 +1,6 @@
-import { Placeholder } from "@/components/app/Placeholder";
-export const metadata = { title: "Sablonok" };
+import type { Metadata } from "next";
+import { TemplatesView } from "@/components/app/TemplatesView";
+export const metadata: Metadata = { title: "Sablonok" };
 export default function Page() {
-  return <Placeholder title="Sablonok" note="Az üzenetsablonok, szegmens-számláló és a csomaglimit-kezelés a következő lépésben készül el." />;
+  return <TemplatesView />;
 }
