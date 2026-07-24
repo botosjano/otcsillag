@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
+import { LenisProvider } from "@/components/LenisProvider";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -38,7 +39,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="hu" className={`${manrope.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LenisProvider />
+        {children}
+      </body>
     </html>
   );
 }
