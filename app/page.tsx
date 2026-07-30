@@ -22,10 +22,11 @@ const FEATURES = [
 export default function Home() {
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden">
-      <Image src="/brand/aurora-desktop.svg" alt="" aria-hidden fill priority className="pointer-events-none -z-10 object-cover" />
+      <Image src="/brand/aurora-mobile.svg" alt="" aria-hidden fill priority className="pointer-events-none -z-10 object-cover sm:hidden" />
+      <Image src="/brand/aurora-desktop.svg" alt="" aria-hidden fill priority className="pointer-events-none -z-10 hidden object-cover sm:block" />
 
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Image src="/brand/logo-lockup.png" alt="otcsillag.hu" width={168} height={62} className="logo-blend h-11 w-auto" priority />
+        <Image src="/brand/logo-lockup-transparent.png" alt="otcsillag.hu" width={168} height={62} className="h-11 w-auto" priority />
         <a href="/app" className="cta flex items-center gap-2 px-5 py-2.5 text-sm">Indítsd el ingyen</a>
       </header>
 
@@ -96,7 +97,7 @@ export default function Home() {
             <Reveal key={title} delay={i * 90} className="glass p-6">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-btn)] bg-cyan-soft text-blue"><Icon className="h-6 w-6" strokeWidth={2} /></span>
-                <span className="text-2xl font-extrabold text-cyan">{i + 1}</span>
+                <span className="text-2xl font-extrabold text-blue">{i + 1}</span>
               </div>
               <p className="mt-4 text-[17px] font-bold text-ink">{title}</p>
               <p className="mt-1.5 text-[14px] leading-relaxed text-ink-2">{desc}</p>
@@ -123,7 +124,7 @@ export default function Home() {
         <div className="rounded-[var(--radius-marketing)] bg-ink px-6 py-10 text-center sm:px-12 sm:py-14">
           <h2 className="text-[1.7rem] font-extrabold tracking-tight text-white sm:text-[2.25rem]">Kezdd el ma, bankkártya nélkül</h2>
           <p className="mx-auto mt-3 max-w-md text-[15px] text-white/80">7 napig minden Pro funkció elérhető. Nincs elköteleződés, bármikor lemondható.</p>
-          <ul className="mx-auto mt-5 flex max-w-md flex-col items-start gap-2 text-left text-[14px] text-white/90 sm:flex-row sm:justify-center sm:gap-6">
+          <ul className="mx-auto mt-5 flex max-w-2xl flex-col items-start gap-2 text-left text-[14px] text-white/90 sm:flex-row sm:items-start sm:justify-center sm:gap-8">
             {["SMS és e-mail csatorna", "Valós kézbesítési státusz", "Saját rövid-linkes kattintásmérés"].map((f) => (
               <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-cyan" /> {f}</li>
             ))}
@@ -135,7 +136,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-8">
-          <Image src="/brand/logo-lockup.png" alt="otcsillag.hu" width={150} height={55} className="logo-blend h-8 w-auto" />
+          <Image src="/brand/logo-lockup-transparent.png" alt="otcsillag.hu" width={150} height={55} className="h-8 w-auto" />
           <p className="text-[13px] text-muted">© 2026 Ötcsillag · A jó munkád ötcsillagos nyomot hagy.</p>
         </div>
       </footer>

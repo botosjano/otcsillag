@@ -20,7 +20,7 @@ export function NewRequestForm() {
   const [sent, setSent] = useState(false);
 
   const message = useMemo(
-    () => MESSAGE_TEMPLATE.replace("{{név}}", name.trim() || "Ügyfél").replace("{{link}}", "otcs.hu/r/9fK2"),
+    () => MESSAGE_TEMPLATE.replaceAll("{{név}}", name.trim() || "Ügyfél").replaceAll("{{link}}", "otcs.hu/r/9fK2"),
     [name],
   );
   const sms = useMemo(() => smsSegments(message), [message]);
@@ -62,7 +62,7 @@ export function NewRequestForm() {
             <label htmlFor="name" className="mb-1.5 block text-[13px] font-bold text-ink">Ügyfél neve</label>
             <div className="relative">
               <User className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-              <input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Kiss Anna" className={`${inputCls} pl-11`} />
+              <input id="name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Kiss Anna" className={`${inputCls} pl-11`} />
             </div>
           </div>
 
@@ -84,7 +84,7 @@ export function NewRequestForm() {
               <label htmlFor="phone" className="mb-1.5 block text-[13px] font-bold text-ink">Telefonszám</label>
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-                <input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+36 30 555 0123" className={`${inputCls} pl-11`} />
+                <input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+36 30 555 0123" className={`${inputCls} pl-11`} />
               </div>
             </div>
           ) : (
@@ -92,7 +92,7 @@ export function NewRequestForm() {
               <label htmlFor="email" className="mb-1.5 block text-[13px] font-bold text-ink">E-mail cím</label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="anna@example.hu" className={`${inputCls} pl-11`} />
+                <input id="email" name="email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="anna@example.hu" className={`${inputCls} pl-11`} />
               </div>
             </div>
           )}
