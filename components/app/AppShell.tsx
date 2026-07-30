@@ -13,7 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobil felső sáv */}
       <header className="flex items-center justify-between px-5 pt-5 pb-1 xl:hidden">
         <Link href="/app">
-          <Image src="/brand/logo-lockup.png" alt="otcsillag.hu" width={130} height={48} className="logo-blend h-8 w-auto" priority />
+          <Image src="/brand/logo-lockup-transparent.png" alt="otcsillag.hu" width={130} height={48} className="h-8 w-auto" priority />
         </Link>
       </header>
 

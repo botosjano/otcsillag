@@ -12,7 +12,7 @@ export function Sidebar() {
   return (
     <aside className="hidden w-nav shrink-0 flex-col border-r border-line px-4 py-6 xl:flex">
       <Link href="/app" className="px-2">
-        <Image src="/brand/logo-lockup.png" alt="otcsillag.hu" width={150} height={55} className="logo-blend h-9 w-auto" priority />
+        <Image src="/brand/logo-lockup-transparent.png" alt="otcsillag.hu" width={150} height={55} className="h-9 w-auto" priority />
       </Link>
 
       <div className="mt-5 flex items-center gap-2.5 rounded-[var(--radius-card)] bg-cyan-soft px-3 py-2.5">
@@ -25,7 +25,7 @@ export function Sidebar() {
 
       <nav className="mt-5 flex flex-col gap-1" aria-label="Fő navigáció">
         {SIDEBAR_NAV.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+          const active = href === "/app" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}

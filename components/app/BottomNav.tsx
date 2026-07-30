@@ -5,6 +5,10 @@ import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 import { BOTTOM_NAV } from "./navItems";
 
+function isActive(href: string, pathname: string) {
+  return href === "/app" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
+}
+
 /** Mobil fix alsó navigáció (< 1200px). Középen a kiemelt "Új kérés". */
 export function BottomNav() {
   const pathname = usePathname();
@@ -17,9 +21,9 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-line bg-white/92 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md xl:hidden"
     >
       {left.map(({ href, label, icon: Icon }) => (
-        <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} className="flex flex-1 flex-col items-center gap-1 py-2">
-          <Icon className={`h-6 w-6 ${pathname === href ? "text-blue" : "text-muted"}`} strokeWidth={2} />
-          <span className={`text-[11px] font-semibold ${pathname === href ? "text-blue" : "text-muted"}`}>{label}</span>
+        <Link key={href} href={href} aria-current={isActive(href, pathname) ? "page" : undefined} className="flex flex-1 flex-col items-center gap-1 py-2">
+          <Icon className={`h-6 w-6 ${isActive(href, pathname) ? "text-blue" : "text-muted"}`} strokeWidth={2} />
+          <span className={`text-[11px] font-semibold ${isActive(href, pathname) ? "text-blue" : "text-muted"}`}>{label}</span>
         </Link>
       ))}
 
@@ -33,9 +37,9 @@ export function BottomNav() {
       </div>
 
       {right.map(({ href, label, icon: Icon }) => (
-        <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} className="flex flex-1 flex-col items-center gap-1 py-2">
-          <Icon className={`h-6 w-6 ${pathname === href ? "text-blue" : "text-muted"}`} strokeWidth={2} />
-          <span className={`text-[11px] font-semibold ${pathname === href ? "text-blue" : "text-muted"}`}>{label}</span>
+        <Link key={href} href={href} aria-current={isActive(href, pathname) ? "page" : undefined} className="flex flex-1 flex-col items-center gap-1 py-2">
+          <Icon className={`h-6 w-6 ${isActive(href, pathname) ? "text-blue" : "text-muted"}`} strokeWidth={2} />
+          <span className={`text-[11px] font-semibold ${isActive(href, pathname) ? "text-blue" : "text-muted"}`}>{label}</span>
         </Link>
       ))}
     </nav>

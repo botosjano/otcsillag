@@ -4,7 +4,7 @@ export function MiniChart({ a, b, height = 180 }: { a: number[]; b: number[]; he
   const H = height;
   const pad = 8;
   const max = Math.max(...a, ...b, 1);
-  const stepX = (W - pad * 2) / (a.length - 1);
+  const stepX = (W - pad * 2) / Math.max(1, a.length - 1);
   const toPts = (arr: number[]) =>
     arr.map((v, i) => `${pad + i * stepX},${H - pad - (v / max) * (H - pad * 2)}`);
   const line = (arr: number[]) => toPts(arr).join(" ");

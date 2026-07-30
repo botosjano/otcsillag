@@ -11,7 +11,7 @@ export default function Page() {
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-[1.7rem] font-extrabold tracking-tight text-ink sm:text-[2rem]">Kérések</h1>
-        <Link href="/app/uj-keres" className="cta flex items-center gap-2 px-5 py-3 text-sm">
+        <Link href="/app/uj-keres" aria-label="Új kérés" className="cta flex items-center gap-2 px-5 py-3 text-sm">
           <Plus className="h-5 w-5" /> <span className="hidden sm:inline">Új kérés</span>
         </Link>
       </div>

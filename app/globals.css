@@ -6,7 +6,7 @@
 @theme {
   --color-ink: #04345a; /* főszöveg, mély felület */
   --color-ink-2: #406780; /* másodlagos szöveg */
-  --color-muted: #7896aa; /* címke, segédszöveg */
+  --color-muted: #5a7180; /* címke, segédszöveg (WCAG AA >= 4.5:1 fehér és #f4f7ff háttéren) */
   --color-blue: #007bc1; /* primer CTA, link */
   --color-blue-deep: #004f88; /* CTA mélység */
   --color-cyan: #44e3ec; /* aktív állapot, fényél */
@@ -47,50 +47,51 @@ body {
   background: rgba(68, 227, 236, 0.28);
 }
 
-/* Elsődleges CTA: ciánból mélykékbe futó gradiens (az arany SOHA nem CTA). */
-.cta {
-  background: linear-gradient(100deg, var(--color-cyan) 0%, var(--color-blue) 55%, var(--color-blue-deep) 100%);
-  color: #ffffff;
-  border-radius: var(--radius-btn);
-  font-weight: 700;
-  box-shadow: 0 14px 30px -14px rgba(0, 123, 193, 0.6);
-  transition: transform 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), filter 220ms var(--ease-standard);
-}
-.cta:hover {
-  transform: translateY(-1px);
-  filter: saturate(1.05);
-  box-shadow: 0 20px 40px -16px rgba(0, 123, 193, 0.7);
-}
-.cta:active {
-  transform: translateY(0) scale(0.99);
-}
-.cta:disabled {
-  filter: grayscale(0.4);
-  opacity: 0.6;
-  box-shadow: none;
-}
+/* @layer components: hogy a Tailwind @layer utilities (pl. bg-gold-soft/70,
+   border-gold/30, border-danger/30) mindig felül tudja írni ezeket a
+   szabályokat -- unlayered CSS a Tailwind cascade-ben mindig nyer, ami
+   korábban láthatatlanná tette az arany kártyákat és a piros hibaállapotot. */
+@layer components {
+  /* Elsődleges CTA: ciánból mélykékbe futó gradiens (az arany SOHA nem CTA). */
+  .cta {
+    background: linear-gradient(100deg, var(--color-cyan) 0%, var(--color-blue) 55%, var(--color-blue-deep) 100%);
+    color: #ffffff;
+    border-radius: var(--radius-btn);
+    font-weight: 700;
+    box-shadow: 0 14px 30px -14px rgba(0, 123, 193, 0.6);
+    transition: transform 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), filter 220ms var(--ease-standard);
+  }
+  .cta:hover {
+    transform: translateY(-1px);
+    filter: saturate(1.05);
+    box-shadow: 0 20px 40px -16px rgba(0, 123, 193, 0.7);
+  }
+  .cta:active {
+    transform: translateY(0) scale(0.99);
+  }
+  .cta:disabled {
+    filter: grayscale(0.4);
+    opacity: 0.6;
+    box-shadow: none;
+  }
 
-/* Üvegkártya: fehér-jeges felület, finom cián keret, belső felső fényél. */
-.glass {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 18px 40px -28px rgba(4, 52, 90, 0.3);
-}
+  /* Üvegkártya: fehér-jeges felület, finom cián keret, belső felső fényél. */
+  .glass {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 18px 40px -28px rgba(4, 52, 90, 0.3);
+  }
 
-/* Gradiens szövegkiemelés (cián->kék). */
-.grad-text {
-  background: linear-gradient(100deg, var(--color-cyan), var(--color-blue));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* A jóváhagyott raster logó gyöngyház hátterét a felületbe olvasztja. */
-.logo-blend {
-  mix-blend-mode: multiply;
+  /* Gradiens szövegkiemelés (cián->kék). */
+  .grad-text {
+    background: linear-gradient(100deg, var(--color-cyan), var(--color-blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
 
 /* Scroll-reveal (flotta-szabvány: saját Reveal + Lenis). */
