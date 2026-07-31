@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { MessageSquare, Mail, User, Phone, Clock, Send, CheckCircle2, TriangleAlert, Home } from "lucide-react";
+import { MessageSquare, Mail, User, Phone, Clock, Send, TriangleAlert } from "lucide-react";
 import { MESSAGE_TEMPLATE, USAGE } from "@/lib/mockData";
 import { smsSegments } from "@/lib/sms";
 
@@ -17,7 +16,6 @@ export function NewRequestForm() {
   const [email, setEmail] = useState("");
   const [channel, setChannel] = useState<Channel>("SMS");
   const [scheduled, setScheduled] = useState(false);
-  const [sent, setSent] = useState(false);
 
   const message = useMemo(
     () => MESSAGE_TEMPLATE.replaceAll("{{név}}", name.trim() || "Ügyfél").replaceAll("{{link}}", "otcs.hu/r/9fK2"),
@@ -25,28 +23,7 @@ export function NewRequestForm() {
   );
   const sms = useMemo(() => smsSegments(message), [message]);
 
-  const canSubmit = name.trim() && (channel === "SMS" ? phone.trim() : email.trim());
   const overLimit = USAGE.used + sms.segments > USAGE.limit;
-
-  if (sent) {
-    return (
-      <div className="mx-auto max-w-lg">
-        <div className="glass flex flex-col items-center px-6 py-14 text-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-soft text-blue">
-            <CheckCircle2 className="h-9 w-9" strokeWidth={2.5} />
-          </span>
-          <h2 className="mt-5 text-2xl font-extrabold text-ink">{scheduled ? "Kérés ütemezve" : "Kérés elküldve"}</h2>
-          <p className="mt-2 max-w-sm text-[15px] text-ink-2">
-            {name.trim()} részére {channel === "SMS" ? "SMS-ben" : "e-mailben"} {scheduled ? "a következő munkaidőben, csendes időszakot figyelve megy ki." : "kiment az értékeléskérés."}
-          </p>
-          <div className="mt-7 flex gap-3">
-            <Link href="/app/keresek" className="rounded-[var(--radius-btn)] border border-line bg-white px-5 py-3 text-sm font-bold text-ink hover:border-blue/40">Kérések</Link>
-            <Link href="/app" className="cta flex items-center gap-2 px-5 py-3 text-sm"><Home className="h-4 w-4" /> Áttekintő</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -57,7 +34,8 @@ export function NewRequestForm() {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
         {/* Űrlap */}
-        <form onSubmit={(e) => { e.preventDefault(); if (canSubmit) setSent(true); }} className="glass flex flex-col gap-4 p-5 sm:p-6">
+        {/* Ez egy előnézeti build: nincs valós backend, ezért az űrlap sosem küldhető el ténylegesen (lásd a disabled gomb + magyarázó szöveg alatta). */}
+        <form onSubmit={(e) => { e.preventDefault(); }} className="glass flex flex-col gap-4 p-5 sm:p-6">
           <div>
             <label htmlFor="name" className="mb-1.5 block text-[13px] font-bold text-ink">Ügyfél neve</label>
             <div className="relative">
@@ -111,9 +89,12 @@ export function NewRequestForm() {
             <p className="mt-1.5 text-[12px] text-muted">A küldés a szervezet időzónája és csendes időszaka szerint történik.</p>
           </div>
 
-          <button type="submit" disabled={!canSubmit} className="cta mt-1 flex items-center justify-center gap-2 py-4 text-[15px] disabled:cursor-not-allowed">
+          <button type="submit" disabled className="cta mt-1 flex items-center justify-center gap-2 py-4 text-[15px] disabled:cursor-not-allowed">
             <Send className="h-5 w-5" /> {scheduled ? "Ütemezés" : "Küldés"}
           </button>
+          <p className="text-center text-[12px] font-semibold text-muted">
+            Ez egy előnézet -- az űrlap itt nem küldhető el.
+          </p>
         </form>
 
         {/* Előnézet + költség */}
