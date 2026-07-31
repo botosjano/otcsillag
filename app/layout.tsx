@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { LenisProvider } from "@/components/LenisProvider";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -42,6 +43,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <LenisProvider />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,6 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Star, ArrowRight, Play, MessageSquare, Clock, BarChart3, UserPlus, Send, MousePointerClick, Link2, ShieldCheck, Check } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { CookieSettingsLink } from "@/components/CookieSettingsLink";
 
 const TRUST = [
   { icon: MessageSquare, title: "SMS és e-mail egy helyen", desc: "Személyes kérés a te nevedben, pár érintéssel." },
@@ -138,6 +140,10 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 sm:flex-row sm:px-8">
           <Image src="/brand/logo-lockup-transparent.png" alt="otcsillag.hu" width={150} height={55} className="h-8 w-auto" />
           <p className="text-[13px] text-muted">© 2026 Ötcsillag · A jó munkád ötcsillagos nyomot hagy.</p>
+          <div className="flex items-center gap-4 text-[13px] text-muted">
+            <Link href="/adatkezelesi-tajekoztato" className="hover:text-blue">Adatkezelési tájékoztató</Link>
+            <CookieSettingsLink className="hover:text-blue" />
+          </div>
         </div>
       </footer>
     </div>
