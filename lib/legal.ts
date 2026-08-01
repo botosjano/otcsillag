@@ -36,3 +36,19 @@ export const LEGAL: LegalInfo = {
   telefon: "TODO: +36 1 000 0000",
   adatvedelmiKapcsolattarto: "TODO: adatvedelem@otcsillag.hu",
 };
+
+/**
+ * Igaz, ha egy mezobe meg nem kerult valos adat.
+ *
+ * A tajekoztato-oldal EZT hasznalja, hogy ne a nyers "TODO: ..." string jelenjen
+ * meg a latogatonak: helyette semleges jelzest ir ki, es egy figyelmeztetest tesz
+ * a szekcio tetejere. A nyers TODO kiirasa rosszabb mint a hianyt bevallani.
+ */
+export function isPlaceholder(value: string): boolean {
+  return value.trimStart().startsWith("TODO");
+}
+
+/** Igaz, ha barmelyik cegadat meg hianyzik. */
+export function hasMissingLegalData(): boolean {
+  return Object.values(LEGAL).some(isPlaceholder);
+}
