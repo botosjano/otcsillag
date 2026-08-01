@@ -32,21 +32,30 @@ export function Reveal({
       setShown(true);
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            setShown(true);
-            if (once) io.disconnect();
-          } else if (!once) {
-            setShown(false);
+    // IntersectionObserver hiánya/hibája ne ragassza a tartalmat opacity:0-n.
+    if (typeof IntersectionObserver === "undefined") {
+      setShown(true);
+      return;
+    }
+    try {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              setShown(true);
+              if (once) io.disconnect();
+            } else if (!once) {
+              setShown(false);
+            }
           }
-        }
-      },
-      { rootMargin: "0px 0px -10% 0px", threshold: 0.12 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+        },
+        { rootMargin: "0px 0px -10% 0px", threshold: 0.12 },
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    } catch {
+      setShown(true);
+    }
   }, [once]);
 
   return (
