@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
   let dispatched = 0;
   let skipped = 0;
   let failed = 0;
+  let blocked = 0;
   for (const row of due ?? []) {
     // A csatorna a kérés létrehozásakor a hívó oldal dönti el (jelenleg nem
     // tárolt review_requests-szinten -- l. README "Nyitott döntés": a
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
     try {
       const result = await dispatchScheduledMessage(supabase, row.id, "sms", deps);
       if (result.status === "skipped") skipped += 1;
+      else if (result.status === "blocked") blocked += 1;
       else dispatched += 1;
     } catch (err) {
       failed += 1;
@@ -129,5 +131,5 @@ export async function POST(request: NextRequest) {
 
   // A `skipped`/`failed` is a válaszban van: enélkül egy néma kihagyás vagy
   // hibázó sor ugyanúgy "0 dispatched"-nek látszana, mint az üres batch.
-  return NextResponse.json({ dispatched, skipped, failed, reminders, expired });
+  return NextResponse.json({ dispatched, skipped, blocked, failed, reminders, expired });
 }

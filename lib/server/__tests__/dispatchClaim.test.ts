@@ -111,3 +111,67 @@ describe("dispatchScheduledMessage -- atomikus claim", () => {
     expect(d.smsProvider.send).not.toHaveBeenCalled();
   });
 });
+
+describe("dispatchScheduledMessage -- a 3.3 kapu a küldési útvonalon", () => {
+  it("ha a kapu TILT, a provider hívása el sem indul és nincs messages sor", async () => {
+    // A kapu bekötésének lényege nem az, hogy a függvény jól számol (azt a
+    // sendAllowance.test.ts fedi), hanem hogy a KÜLDÉSI ÚTVONAL tényleg
+    // megáll rajta. Korábban a `canSendWithinOrOverLimit`-et alkalmazáskód
+    // sehol nem hívta, tehát a limitjét túllépő szervezet üzenetei kimentek.
+    const calls: string[] = [];
+    const client = {
+      from: (table: string) => {
+        calls.push(`from:${table}`);
+        const chain: Record<string, unknown> = {};
+        const self = () => chain;
+        chain.update = () => { calls.push(`update:${table}`); return chain; };
+        chain.insert = () => { calls.push(`insert:${table}`); return chain; };
+        chain.eq = self;
+        chain.neq = self;
+        chain.gte = self;
+        chain.lt = () => (table === "usage_ledger" ? Promise.resolve({ data: [{ unit: "sms_segment", quantity: 999 }], error: null }) : chain);
+        chain.limit = self;
+        // A review_requests-en a select() KÉTFÉLE szerepben hívódik: a claim
+        // után eredményként (await-elve), a lookupnál láncként (.eq().single()).
+        // Ezért thenable ÉS láncolható egyszerre.
+        chain.select = () => {
+          if (table !== "review_requests") return chain;
+          const hybrid: Record<string, unknown> = { ...chain };
+          hybrid.then = (resolve: (v: unknown) => unknown) => resolve({ data: [{ id: "req_1" }], error: null });
+          hybrid.eq = () => hybrid;
+          hybrid.single = chain.single;
+          return hybrid;
+        };
+        chain.single = () =>
+          Promise.resolve({
+            data: {
+              id: "req_1",
+              organization_id: "org_1",
+              contacts: { phone_e164: "+36301234567", email_normalized: null, first_name: "Teszt" },
+              locations: { review_url: "https://g.page/x" },
+            },
+            error: null,
+          });
+        chain.maybeSingle = () =>
+          Promise.resolve({
+            data: {
+              status: "active",
+              current_period_start: "2026-08-01T00:00:00Z",
+              current_period_end: "2026-09-01T00:00:00Z",
+              plans: { sms_segment_limit: 50, email_limit: 100, overage_sms_huf: null },
+            },
+            error: null,
+          });
+        return chain;
+      },
+      rpc: vi.fn().mockResolvedValue({ data: false, error: null }),
+    } as unknown as SupabaseClient;
+
+    const d = deps();
+    const result = await dispatchScheduledMessage(client, "req_1", "sms", d);
+
+    expect(result.status).toBe("blocked");
+    expect(d.smsProvider.send).not.toHaveBeenCalled();
+    expect(calls).not.toContain("insert:messages");
+  });
+});

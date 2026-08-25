@@ -132,8 +132,91 @@ Forrás: `docs/csillagflow-reszletes-fejlesztesi-specifikacio.md` (marveen repo)
    apró migráció kellene egy `channel` oszlop hozzáadásához, ha ez éles
    probléma.
 
+## Backend: előfizetés + számlázás (kártya 3a9a231f)
+
+Forrás: spec 3. és 5.6 rész. Erre a kártyára épül a `feat/billing-subscriptions`
+ág a `feat/delivery-tracking-backend` (PR#11, `0001_delivery_tracking.sql`)
+tetején -- ugyanaz a mintázat, mint az elmentve-projektben a PR#15/PR#13 közti
+függés.
+
+### Amit ez a kártya lefed
+
+- `supabase/migrations/0002_billing.sql` -- `plans` (3.1 csomagkatalógus,
+  DB-konfigurálható, NEM kódba égetve -- Próba/Starter/Pro seedelve, Partner
+  admin/SQL-lel vihető fel), `subscriptions` (FR-BILL-001 állapotgép,
+  szervezetenként egy aktív előfizetés), `usage_ledger` (append-only
+  fogyasztás-napló), `invoices` (FR-BILL-004 számlaindítás-állapot).
+- `lib/server/subscriptionStatus.ts` -- tiszta állapotgép-függvények
+  (FR-BILL-001/006): `nextSubscriptionStatus` (fizetési esemény -> új
+  státusz + grace period), `shouldSuspendForExpiredGrace` (idő-alapú
+  felfüggesztés-döntés a cron számára).
+- `lib/server/usageLedger.ts` -- FR-BILL-005 túlfogyasztás-számítás +
+  3.3 "SMS-költségvédelem" küldés-előtti kapu (`canSendWithinOrOverLimit`) --
+  TISZTA számoló-függvények, adatbázis-hívás nélkül.
+- `lib/server/sendAllowance.ts` -- a 3.3 kapu tényleges BEKÖTÉSE: összeszedi
+  az előfizetést, a csomag-limiteket és az időszaki usage-t, és a
+  `dispatchScheduledMessage` a claim után, a provider-hívás ELŐTT ezen áll
+  meg. (A kapu korábban meg volt írva, de alkalmazáskód sehol nem hívta,
+  tehát a valóságban nem védett semmit -- Elemér PR#12-review-ja.)
+- `lib/server/billingProviders/stripe.ts` -- `BillingProvider` a hivatalos
+  `stripe` npm csomaggal (checkout session, customer portal, webhook-
+  aláírás-ellenőrzés a Stripe SDK saját `constructEvent`-jével -- ez itt
+  NEM saját HMAC-implementáció, mert van hivatalos, karbantartott SDK,
+  ellentétben a LINK/SeeMe és MyLINK adapterekkel).
+- `lib/server/billingProviders/invoicing.ts` -- `InvoiceProvider` interfész,
+  `BillingoInvoiceProvider` alapértelmezett (a spec Billingo/Számlázz.hu
+  közt nem dönt, ugyanaz a nyitottság mint a JAWAD-projekt Stripe/Barion
+  választásánál) + `NullInvoiceProvider` dev/tesztre.
+- `app/api/billing/{checkout,portal}/route.ts` -- FR-BILL-002 hosted
+  checkout + customer portal indítás.
+- `app/api/webhooks/stripe/route.ts` -- FR-BILL-003 jogosultság/limit
+  frissítés Stripe webhookból, FR-BILL-004 számlaindítás sikeres fizetés
+  után (idempotens, a Stripe `event.id`-vel).
+- `app/api/cron/billing-sweep/route.ts` -- FR-BILL-006 grace period lejárta
+  utáni felfüggesztés (időalapú, cron-hívású, nem webhook-triggerelt).
+- `app/api/usage/route.ts` -- 9.2 `GET /usage` + FR-DASH-004 (jelenlegi
+  időszak fogyasztása/limitje/túlfogyasztása).
+
+### Amit ez a kártya NEM fed le
+
+- API-kulcsok/scope-ok, Google-sync, CSV-import (Integrations kártya, f4e5bb99).
+- A dashboard "Beállítások" UI valós billing-adatra kötése (jelenleg
+  `lib/mockData.ts USAGE`-t használ).
+- Barion adapter (a spec csak "opcióként" említi Stripe mellett -- ha Janos
+  ezt választja egy konkrét ügyfélnél, a `BillingProvider` interfész mögé
+  új adapter kerülne, a hívó kód nem változna).
+
+### Nyitott döntések / blokkolók éles indulás előtt
+
+1. **Stripe fiók + termék/ár-konfiguráció** -- a `STRIPE_PRICE_STARTER`/
+   `STRIPE_PRICE_PRO` env-változók valós Stripe Price ID-kat várnak; ezek
+   csak egy éles Stripe-fiókban, a csomagok Stripe-oldali létrehozása után
+   léteznek.
+2. **Billingo (vagy Számlázz.hu) fiók + API-kulcs** -- `BillingoInvoiceProvider`
+   egy ésszerű, szokásos REST-sémát követ, éles hozzáférés/dokumentáció
+   nélkül nem ellenőrizhető a pontos payload-forma.
+3. **Grace period hossza** -- a spec nem ad meg számot, 7 nap az alapérték
+   (`lib/server/subscriptionStatus.ts` `DEFAULT_GRACE_PERIOD_DAYS`),
+   paraméterezhető, ha Janos mást szeretne.
+   **Nyitott tervezői kérdés (Elemér PR#12-review-ja):** egy MÁR `past_due`
+   előfizetésre érkező ÚJABB `payment_failed` (pl. Stripe smart-retry)
+   jelenleg minden alkalommal újra +7 napra tolja a `grace_period_ends_at`-ot
+   a hívás pillanatától. Ha a Stripe hetekig retry-zik, ez gyakorlatilag
+   korlátlanul meghosszabbítja a türelmi időt. A másik olvasat: a türelmi idő
+   az ELSŐ sikertelen fizetéstől számított fix ablak. A spec nem dönt, ezért
+   ez ma tudatosan a "mindig +7 nap a legutóbbi hibától" ágon áll -- Janos
+   döntése kell hozzá, mert bevételi hatása van.
+4. **Ütemező-infra** -- `POST /api/cron/billing-sweep` ugyanarra a
+   megoldatlan hosting-kérdésre vár, mint a `dispatch` cron (l. az előző
+   szakasz 3. pontja).
+5. **Napi usage-reconcile** (3.3: "Provider-billing eltérést napi usage
+   reconcile folyamat jelezzen") -- nincs megírva; a `usage_ledger` a
+   SAJÁT küldéseinket számolja, egy külön folyamat vetné össze a LINK/
+   SeeMe és MyLINK tényleges számlázásával.
+
 ## Állapot
 
 - [x] Kártya 26-32 — teljes UI (landing, áttekintő, új kérés, kérések+részlet, sablonok/usage, mobil)
 - [x] Kártya 33 (d72b7afd) — SMS/e-mail kézbesítés + saját rövid-linkes kattintásmérés backend
-- [ ] Kártya 34-35 — billing, integrációk/admin (backend)
+- [x] Kártya 34 (3a9a231f) — előfizetés + számlázás (billing) backend
+- [ ] Kártya 35 (f4e5bb99) — integrációk/admin (backend)
