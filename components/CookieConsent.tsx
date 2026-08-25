@@ -12,9 +12,20 @@ import {
   type ConsentChoices,
 } from "@/lib/consent";
 
+/* A leirasok a TENYLEGES allapotot mondjak: jelenleg egyik kategoriaban sem fut
+   semmilyen script (l. lib/consent.ts). Ha barmelyik elindul, ITT is pontositani
+   kell, kulonben a tajekoztatas valotlan lesz. */
 const CATEGORIES: { key: keyof ConsentChoices; label: string; desc: string }[] = [
-  { key: "analitika", label: "Analitika", desc: "Anonimizált használati statisztika, hogy tudjuk mit érdemes fejleszteni." },
-  { key: "marketing", label: "Marketing", desc: "Hirdetési mérőkódok, célzott ajánlatok." },
+  {
+    key: "analitika",
+    label: "Analitika",
+    desc: "Anonimizált látogatottsági statisztika, hogy lássuk mit érdemes fejleszteni. Jelenleg nem futtatunk ilyen mérést.",
+  },
+  {
+    key: "marketing",
+    label: "Marketing",
+    desc: "Hirdetési mérőkódok és célzott ajánlatok. Jelenleg nem futtatunk ilyen mérőkódot.",
+  },
 ];
 
 const DEFAULT_CHOICES: ConsentChoices = { analitika: false, marketing: false };
@@ -106,7 +117,10 @@ export function CookieConsent() {
               <div>
                 <p className="text-[15px] font-bold text-ink">Sütiket használunk</p>
                 <p className="mt-1 text-[13px] leading-relaxed text-ink-2">
-                  SZÖVEG IDE KERÜL -- rövid, közérthető magyarázat a sütihasználatról. Részletek:{" "}
+                  Az oldal működéséhez szükséges sütiket mindig használjuk: ezek tárolják a süti-döntésedet, és
+                  nélkülük az oldal nem működne. Analitikai és marketing sütit csak a hozzájárulásoddal
+                  helyeznénk el, ilyet jelenleg egyáltalán nem futtatunk. A döntésedet bármikor módosíthatod a
+                  lábléc „Süti-beállítások” linkjén. Részletek:{" "}
                   <Link href="/adatkezelesi-tajekoztato" className="font-semibold text-blue underline underline-offset-2">
                     Adatkezelési tájékoztató
                   </Link>
@@ -153,7 +167,9 @@ export function CookieConsent() {
               </button>
             </div>
             <p className="mt-1 text-[13px] text-ink-2">
-              SZÖVEG IDE KERÜL -- kategóriánkénti részletes magyarázat. Lásd az{" "}
+              Kategóriánként külön dönthetsz. A szükséges sütik nem kapcsolhatók ki, mert nélkülük az oldal nem
+              működik. A másik két kategória alapértelmezés szerint KI van kapcsolva, és jelenleg egyikben sem
+              fut semmilyen mérőkód, a kapcsolók arra vonatkoznak, hogy a jövőben elindulhat-e ilyen. Lásd az{" "}
               <Link href="/adatkezelesi-tajekoztato" className="font-semibold text-blue underline underline-offset-2">
                 adatkezelési tájékoztatót
               </Link>

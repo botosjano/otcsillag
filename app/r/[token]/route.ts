@@ -35,10 +35,27 @@ export async function GET(request: NextRequest, context: { params: Promise<{ tok
   return NextResponse.redirect(link.destinationUrl, { status: 302 });
 }
 
+/**
+ * IP-cím álnevesítése kattintás-méréshez.
+ *
+ * SÓ NÉLKÜL EZ NEM ANONIMIZÁLÁS (Elemér PR#11-review-jának megfigyelése): egy
+ * IPv4-cím keresési tere ~4 milliárd érték, amit egy mai gép percek alatt
+ * végigpróbál -- a sózatlan SHA-256 tehát csak elrejti a nyers formát, de
+ * visszafejthető, vagyis GDPR-értelemben továbbra is személyes adat.
+ *
+ * A titkos, szerver-oldali só ezt megszünteti: a hash csak akkor fejthető
+ * vissza, ha a támadó a sót IS megszerzi (az pedig nem a naplóban/DB-ben van).
+ *
+ * FAIL-CLOSED: ha a só nincs beállítva, INKÁBB NEM TÁROLUNK IP-t. A sózatlan
+ * hash hamis biztonságérzetet adna -- úgy néz ki, mintha anonimizált lenne.
+ * A kattintás-mérés IP nélkül is működik (a `null` megengedett).
+ */
 async function hashIp(forwardedFor: string | null): Promise<string | null> {
   const ip = forwardedFor?.split(",")[0]?.trim();
   if (!ip) return null;
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+  const salt = process.env.CLICK_IP_HASH_SALT;
+  if (!salt) return null;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${ip}`));
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
