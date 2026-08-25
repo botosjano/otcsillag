@@ -123,7 +123,28 @@ export async function dispatchScheduledMessage(
   requestId: string,
   channel: Channel,
   deps: DispatchMessageDeps,
-): Promise<{ status: "submitted" | "suppressed" | "failed"; messageId: string }> {
+): Promise<{ status: "submitted" | "suppressed" | "failed" | "skipped"; messageId: string | null }> {
+  // ATOMIKUS LEFOGLALÁS (Elemér PR#11-review-ja). Feltételes UPDATE: csak akkor
+  // sikerül, ha a sor MÉG `scheduled`. A visszakapott sorok száma dönt -- ha
+  // üres, valaki más már elvitte (másik cron-tick), vagy időközben visszavonták.
+  //
+  // Enélkül két valós kár keletkezett: (1) a cancel a dispatch közben lefutott
+  // és a staff "visszavontam" választ kapott, miközben az üzenet kiment;
+  // (2) egy dispatch közbeni hiba után a sor `scheduled` maradt, és a következő
+  // tick ÚJRA kiküldte ugyanazt az üzenetet.
+  const { data: claimed, error: claimError } = await supabase
+    .from("review_requests")
+    .update({ status: "dispatching", dispatch_claimed_at: new Date().toISOString() })
+    .eq("id", requestId)
+    .eq("status", "scheduled")
+    .select("id");
+  if (claimError) throw new Error(`dispatchScheduledMessage claim failed: ${claimError.message}`);
+  if (!claimed || claimed.length === 0) {
+    // Nem hiba: pontosan ez a védelem működése. A hívó (cron) ezt kihagyásként
+    // számolja, nem sikertelen küldésként.
+    return { status: "skipped", messageId: null };
+  }
+
   const { data: request, error: requestError } = await supabase
     .from("review_requests")
     .select("id, organization_id, location_id, contact_id, contacts(phone_e164, email_normalized, first_name), locations(review_url)")
@@ -152,7 +173,13 @@ export async function dispatchScheduledMessage(
   if (messageInsertError) throw new Error(`dispatchScheduledMessage message insert failed: ${messageInsertError.message}`);
 
   if (suppressed) {
-    await supabase.from("review_requests").update({ status: "failed", updated_at: new Date().toISOString() }).eq("id", requestId);
+    // A záró állapot-írás CSAK a saját claim-ünket írhatja felül (`dispatching`).
+    // Enélkül egy közben beérkezett cancel-t némán visszaírnánk.
+    await supabase
+      .from("review_requests")
+      .update({ status: "failed", dispatch_claimed_at: null, updated_at: new Date().toISOString() })
+      .eq("id", requestId)
+      .eq("status", "dispatching");
     return { status: "suppressed", messageId: message.id };
   }
 
@@ -199,8 +226,9 @@ export async function dispatchScheduledMessage(
   });
   await supabase
     .from("review_requests")
-    .update({ status: result.ok ? "active" : "failed", updated_at: nowIso })
-    .eq("id", requestId);
+    .update({ status: result.ok ? "active" : "failed", dispatch_claimed_at: null, updated_at: nowIso })
+    .eq("id", requestId)
+    .eq("status", "dispatching");
 
   return { status: result.ok ? "submitted" : "failed", messageId: message.id };
 }
