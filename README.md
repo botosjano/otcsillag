@@ -214,9 +214,41 @@ függés.
    SAJÁT küldéseinket számolja, egy külön folyamat vetné össze a LINK/
    SeeMe és MyLINK tényleges számlázásával.
 
+## Backend: integrációk (kártya f4e5bb99, folyamatban)
+
+Forrás: spec 5.7, 8.2, 9.1, 11.4. Terv: `docs/otcsillag-integraciok-admin-terv-2026-08-25.md`
+(marveen repo) -- a PR-bontás, a "mi van már meg" leltár és a nyitott kérdés
+(hol éljen az `Idempotency-Key` TTL) ott részletezve.
+
+### Amit ez a kártya EDDIG lefed (PR-A: FR-API-001)
+
+- `supabase/migrations/0004_api_keys.sql` -- `api_keys` tábla (org_id, name,
+  prefix, secret_hash, scopes, created_at, revoked_at, last_used_at), RLS
+  bekapcsolva (l. a 0001 migráció fail-closed indoklása).
+- `lib/server/apiKey.ts` -- kulcs-generálás (`csillag_live_{prefix}_{secret}`
+  formátum, a `secret` a titok, csak SHA-256 hash-e tárolódik),
+  `authenticateApiKey` (prefix-lookup + konstans idejű hash-összevetés +
+  revoked-ellenőrzés + `last_used_at` frissítés), `hasScope` scope-ellenőrzés
+  (`contacts:write`, `requests:write`, `requests:read`, `reports:read`).
+- `app/api/admin/api-keys/{route.ts,[id]/revoke/route.ts}` -- létrehozás
+  (a nyers kulcs KIZÁRÓLAG a létrehozás válaszában látszik), lista (hash
+  nélkül) és visszavonás. **Ideiglenes védelem:** `x-admin-secret` fejléc +
+  `ADMIN_API_SECRET` env, ugyanaz a minta mint a cron-endpointoknál -- ezt az
+  Identity/Org modul (FR-AUTH-*/FR-ORG-*) vagy a platform-admin bejelentkezés
+  (FR-ADM-*) váltja ki, amelyik előbb megérkezik.
+
+### Amit ez a kártya MÉG NEM fed le
+
+- FR-WH-001/002 (általános tenant-webhook + `Idempotency-Key` réteg, PR-B),
+  FR-ADM-001/002/003 (admin áttekintő, PR-C, a PR#12 usage-ledgerére épül),
+  FR-INT-001 (Make-recipe doksi, PR-D). Bontás és sorrend a terv-dokumentumban.
+- Az `authenticateApiKey`-t még egyetlen publikus (nem admin) route sem hívja
+  -- ez a PR-B feladata lesz (a generikus `POST /webhooks/events` ezzel
+  hitelesít majd, l. spec 9.1 "külső integráció Bearer API-kulccsal").
+
 ## Állapot
 
 - [x] Kártya 26-32 — teljes UI (landing, áttekintő, új kérés, kérések+részlet, sablonok/usage, mobil)
 - [x] Kártya 33 (d72b7afd) — SMS/e-mail kézbesítés + saját rövid-linkes kattintásmérés backend
 - [x] Kártya 34 (3a9a231f) — előfizetés + számlázás (billing) backend
-- [ ] Kártya 35 (f4e5bb99) — integrációk/admin (backend)
+- [ ] Kártya 35 (f4e5bb99) — integrációk/admin (backend) — PR-A (API-kulcs) kész, PR-B/C/D hátra
