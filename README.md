@@ -237,18 +237,46 @@ Forrás: spec 5.7, 8.2, 9.1, 11.4. Terv: `docs/otcsillag-integraciok-admin-terv-
   Identity/Org modul (FR-AUTH-*/FR-ORG-*) vagy a platform-admin bejelentkezés
   (FR-ADM-*) váltja ki, amelyik előbb megérkezik.
 
+### PR-B: FR-WH-001/002 (általános tenant-webhook + Idempotency-Key)
+
+- `supabase/migrations/0005_idempotency_keys.sql` -- külön `idempotency_keys`
+  tábla (org_id, key, status, response_status, response_body, created_at),
+  RLS bekapcsolva. Külön a meglévő `webhook_events`-től (provider event ID
+  dedup) és a `review_requests.idempotency_key`-től (domain-szintű, a sor
+  JELENLEGI állapotát adja vissza) -- ez a réteg a PONTOS válasz-testet is
+  visszajátssza, bármelyik jövőbeli tenant-végponthoz felhasználható.
+- `lib/server/idempotency.ts` -- `beginIdempotentRequest`: `proceed` (friss
+  kulcs, a hívó a végén `commit`-tal zárja le) / `replay` (24 órán belüli,
+  lezárt kulcs -- pontosan az eredeti válasz) / `conflict` (ugyanaz a kulcs
+  MÉG feldolgozás alatt, l. Stripe-mintájú idempotencia). A 24 óra lejárta
+  után a kulcs atomikusan visszafoglalható (feltételes UPDATE, ugyanaz a
+  minta mint a dispatch-claimnél, 0003 migráció).
+- `app/api/webhooks/events/route.ts` -- 9.2 `POST /webhooks/events`: Bearer
+  API-kulcs (`requests:write` scope) + KÖTELEZŐ `Idempotency-Key` fejléc.
+  Tenant-izoláció: a `location_id`-t explicit ellenőrzi a hitelesített kulcs
+  `organization_id`-je ellen, mielőtt bármit írna (11.1) -- ez az ELSŐ
+  végpont, ahol a szervezet nem a fix env-defaultból jön, hanem a kulcsból,
+  tehát ez a check ténylegesen számít, nem csak elméleti védelem.
+  **NYITOTT FELTEVÉS (l. PR-leírás):** a generikus esemény ma a
+  review-request létrehozás payloadját veszi át (`createReviewRequest`
+  újrahasznosításával) -- a spec nem ír le konkrét payload-sémát egy
+  "generikus üzleti eseményhez", ez az egyetlen olyan művelet, amit a
+  rendszer ma végponttól végpontig ismer.
+
 ### Amit ez a kártya MÉG NEM fed le
 
-- FR-WH-001/002 (általános tenant-webhook + `Idempotency-Key` réteg, PR-B),
-  FR-ADM-001/002/003 (admin áttekintő, PR-C, a PR#12 usage-ledgerére épül),
+- FR-ADM-001/002/003 (admin áttekintő, PR-C, a PR#12 usage-ledgerére épül),
   FR-INT-001 (Make-recipe doksi, PR-D). Bontás és sorrend a terv-dokumentumban.
-- Az `authenticateApiKey`-t még egyetlen publikus (nem admin) route sem hívja
-  -- ez a PR-B feladata lesz (a generikus `POST /webhooks/events` ezzel
-  hitelesít majd, l. spec 9.1 "külső integráció Bearer API-kulccsal").
+- Az `authenticateApiKey`-t még csak a `/webhooks/events` route hívja. A 9.2
+  tábla többi publikus tenant-végpontja (`/contacts`, `/review-requests/{id}`
+  stb.) jelenleg csak a fix env-default szervezetet szolgálja ki -- ha ezek
+  is API-kulcsos hitelesítést kapnak, ugyanezt a `authenticateApiKey`+scope
+  mintát kell rájuk is bekötni (l. spec 9.1 "külső integráció Bearer
+  API-kulccsal").
 
 ## Állapot
 
 - [x] Kártya 26-32 — teljes UI (landing, áttekintő, új kérés, kérések+részlet, sablonok/usage, mobil)
 - [x] Kártya 33 (d72b7afd) — SMS/e-mail kézbesítés + saját rövid-linkes kattintásmérés backend
 - [x] Kártya 34 (3a9a231f) — előfizetés + számlázás (billing) backend
-- [ ] Kártya 35 (f4e5bb99) — integrációk/admin (backend) — PR-A (API-kulcs) kész, PR-B/C/D hátra
+- [ ] Kártya 35 (f4e5bb99) — integrációk/admin (backend) — PR-A/B (API-kulcs + webhook/idempotencia) kész, PR-C/D hátra
