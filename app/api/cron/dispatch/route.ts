@@ -36,14 +36,48 @@ export async function POST(request: NextRequest) {
   if (dueError) throw new Error(`cron dispatch due-lookup failed: ${dueError.message}`);
 
   let dispatched = 0;
+  let skipped = 0;
+  let failed = 0;
   for (const row of due ?? []) {
     // A csatorna a kérés létrehozásakor a hívó oldal dönti el (jelenleg nem
     // tárolt review_requests-szinten -- l. README "Nyitott döntés": a
     // csatornaválasztás request-szintű mezővé emelése külön kis migráció).
     // MVP-ként az "sms"-t feltételezzük alapértelmezettként, amíg ez nincs
     // eldöntve.
-    await dispatchScheduledMessage(supabase, row.id, "sms", deps);
-    dispatched += 1;
+    //
+    // EGY SOR HIBÁJA NEM SZAKÍTHATJA MEG A BATCH-T (Elemér PR#11-review-ja):
+    // korábban egy dobás (pl. suppression-RPC hiba) kiejtette a batch teljes
+    // hátralévő részét arra a futásra. A claim miatt a hibázott sor
+    // `dispatching`-ben marad, tehát a következő tick sem küldi ki újra --
+    // ezért a hibát naplózzuk és a KÖVETKEZŐ sorral folytatjuk.
+    try {
+      const result = await dispatchScheduledMessage(supabase, row.id, "sms", deps);
+      if (result.status === "skipped") skipped += 1;
+      else dispatched += 1;
+    } catch (err) {
+      failed += 1;
+      console.error("[cron/dispatch] sor feldolgozása elhasalt", {
+        requestId: row.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  // BERAGADT CLAIM-EK JELENTÉSE. Szándékosan NEM szabadítjuk fel automatikusan
+  // (l. a 0003 migráció indoklása): egy lassú, de élő dispatch alól kihúzva a
+  // sort pont a duplikált küldést hoznánk vissza. Csak láthatóvá tesszük.
+  const stuckSince = new Date(Date.now() - 15 * 60_000).toISOString();
+  const { data: stuck } = await supabase
+    .from("review_requests")
+    .select("id, dispatch_claimed_at")
+    .eq("status", "dispatching")
+    .lt("dispatch_claimed_at", stuckSince)
+    .limit(20);
+  if (stuck && stuck.length > 0) {
+    console.error("[cron/dispatch] beragadt dispatch-claim (emberi döntés kell: kiment-e az üzenet?)", {
+      count: stuck.length,
+      requestIds: stuck.map((r) => r.id),
+    });
   }
 
   // request.evaluate_reminder: aktív kérések, ahol a legutóbbi üzenet
@@ -93,5 +127,7 @@ export async function POST(request: NextRequest) {
     // "pause_and_notify_owner" -- admin-riasztás, l. README nyitott döntés.
   }
 
-  return NextResponse.json({ dispatched, reminders, expired });
+  // A `skipped`/`failed` is a válaszban van: enélkül egy néma kihagyás vagy
+  // hibázó sor ugyanúgy "0 dispatched"-nek látszana, mint az üres batch.
+  return NextResponse.json({ dispatched, skipped, failed, reminders, expired });
 }
