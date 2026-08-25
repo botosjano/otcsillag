@@ -58,11 +58,26 @@ export async function processProviderCallbackEvent(
   const canonicalStatusChanged = next.status !== current.status || next.occurredAt !== current.occurredAt;
 
   if (canonicalStatusChanged) {
-    const { error: updateError } = await supabase
+    // Ugyanaz a feltételes-írás minta, mint a dispatch-claimnél (Elemér
+    // PR#11-review-jának nem-blokkoló megfigyelése). A hatás itt enyhébb -- a
+    // rangsor-logika önkorrigáló, mert a következő callback úgyis a helyes
+    // végállapotra hozza --, de a SELECT és az UPDATE között ide is beférhet
+    // egy másik provider-callback, és akkor az ő frissítését írnánk felül egy
+    // elavult olvasáson alapuló döntéssel. A `updated_at` egyezés-feltétel egy
+    // olcsó optimista zár: csak akkor írunk, ha a sor még abban az állapotban
+    // van, amit láttunk.
+    const { data: updated, error: updateError } = await supabase
       .from("messages")
       .update({ status: next.status, updated_at: next.occurredAt })
-      .eq("id", event.messageId);
+      .eq("id", event.messageId)
+      .eq("updated_at", current.occurredAt)
+      .select("id");
     if (updateError) throw new Error(`processProviderCallbackEvent update failed: ${updateError.message}`);
+    if (!updated || updated.length === 0) {
+      // Nem hiba: közben egy másik callback már frissítette. A rangsor-logika
+      // miatt az ő eredménye ugyanolyan érvényes, csak nem a miénk nyert.
+      return { logged, canonicalStatusChanged: false, appliedStatus: current.status };
+    }
   }
 
   return { logged, canonicalStatusChanged, appliedStatus: next.status };
