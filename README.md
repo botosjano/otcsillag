@@ -151,7 +151,13 @@ függés.
   státusz + grace period), `shouldSuspendForExpiredGrace` (idő-alapú
   felfüggesztés-döntés a cron számára).
 - `lib/server/usageLedger.ts` -- FR-BILL-005 túlfogyasztás-számítás +
-  3.3 "SMS-költségvédelem" küldés-előtti kapu (`canSendWithinOrOverLimit`).
+  3.3 "SMS-költségvédelem" küldés-előtti kapu (`canSendWithinOrOverLimit`) --
+  TISZTA számoló-függvények, adatbázis-hívás nélkül.
+- `lib/server/sendAllowance.ts` -- a 3.3 kapu tényleges BEKÖTÉSE: összeszedi
+  az előfizetést, a csomag-limiteket és az időszaki usage-t, és a
+  `dispatchScheduledMessage` a claim után, a provider-hívás ELŐTT ezen áll
+  meg. (A kapu korábban meg volt írva, de alkalmazáskód sehol nem hívta,
+  tehát a valóságban nem védett semmit -- Elemér PR#12-review-ja.)
 - `lib/server/billingProviders/stripe.ts` -- `BillingProvider` a hivatalos
   `stripe` npm csomaggal (checkout session, customer portal, webhook-
   aláírás-ellenőrzés a Stripe SDK saját `constructEvent`-jével -- ez itt
@@ -192,6 +198,14 @@ függés.
 3. **Grace period hossza** -- a spec nem ad meg számot, 7 nap az alapérték
    (`lib/server/subscriptionStatus.ts` `DEFAULT_GRACE_PERIOD_DAYS`),
    paraméterezhető, ha Janos mást szeretne.
+   **Nyitott tervezői kérdés (Elemér PR#12-review-ja):** egy MÁR `past_due`
+   előfizetésre érkező ÚJABB `payment_failed` (pl. Stripe smart-retry)
+   jelenleg minden alkalommal újra +7 napra tolja a `grace_period_ends_at`-ot
+   a hívás pillanatától. Ha a Stripe hetekig retry-zik, ez gyakorlatilag
+   korlátlanul meghosszabbítja a türelmi időt. A másik olvasat: a türelmi idő
+   az ELSŐ sikertelen fizetéstől számított fix ablak. A spec nem dönt, ezért
+   ez ma tudatosan a "mindig +7 nap a legutóbbi hibától" ágon áll -- Janos
+   döntése kell hozzá, mert bevételi hatása van.
 4. **Ütemező-infra** -- `POST /api/cron/billing-sweep` ugyanarra a
    megoldatlan hosting-kérdésre vár, mint a `dispatch` cron (l. az előző
    szakasz 3. pontja).

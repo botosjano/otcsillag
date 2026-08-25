@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeEmail, normalizePhone } from "@/lib/server/normalize";
 import { isSuppressed } from "@/lib/server/suppression";
+import { checkSendAllowance } from "@/lib/server/sendAllowance";
 import { createShortLink } from "@/lib/server/shortlink";
 import { renderSmsBody, applyVars } from "@/lib/server/template";
 import type { SmsProvider } from "@/lib/server/providers/sms";
@@ -123,7 +124,7 @@ export async function dispatchScheduledMessage(
   requestId: string,
   channel: Channel,
   deps: DispatchMessageDeps,
-): Promise<{ status: "submitted" | "suppressed" | "failed" | "skipped"; messageId: string | null }> {
+): Promise<{ status: "submitted" | "suppressed" | "failed" | "skipped" | "blocked"; messageId: string | null; blockedReason?: string }> {
   // ATOMIKUS LEFOGLALÁS (Elemér PR#11-review-ja). Feltételes UPDATE: csak akkor
   // sikerül, ha a sor MÉG `scheduled`. A visszakapott sorok száma dönt -- ha
   // üres, valaki más már elvitte (másik cron-tick), vagy időközben visszavonták.
@@ -156,6 +157,22 @@ export async function dispatchScheduledMessage(
   const location = request.locations as unknown as { review_url: string };
   const destination = channel === "sms" ? contact.phone_e164 : contact.email_normalized;
   if (!destination) throw new Error(`dispatchScheduledMessage: contact has no ${channel} destination`);
+
+  // 3.3 KÜLDÉS-ELŐTTI KAPU (Elemér PR#12-review-ja). A claim UTÁN, de a
+  // `messages` insert és a provider-hívás ELŐTT: ha a szervezet elérte a
+  // keretét és nincs érvényes fizetési módja, itt állunk meg -- nem utólag
+  // számlázunk. A `review_requests` visszakerül `scheduled`-be, hogy a keret
+  // rendezése (fizetés/csomagváltás/új időszak) után magától kimehessen;
+  // nem `failed`, mert nem a kérés hibás, hanem a pillanatnyi keret.
+  const allowance = await checkSendAllowance(supabase, request.organization_id, channel === "sms" ? "sms_segment" : "email");
+  if (!allowance.allowed) {
+    await supabase
+      .from("review_requests")
+      .update({ status: "scheduled", dispatch_claimed_at: null, updated_at: new Date().toISOString() })
+      .eq("id", requestId)
+      .eq("status", "dispatching");
+    return { status: "blocked", messageId: null, blockedReason: allowance.reason };
+  }
 
   const suppressed = await isSuppressed(supabase, request.organization_id, channel, destination);
 
