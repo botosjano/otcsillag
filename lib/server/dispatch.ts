@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeEmail, normalizePhone } from "@/lib/server/normalize";
 import { isSuppressed } from "@/lib/server/suppression";
 import { checkSendAllowance } from "@/lib/server/sendAllowance";
+import { checkSendPause } from "@/lib/server/sendPause";
 import { createShortLink } from "@/lib/server/shortlink";
 import { renderSmsBody, applyVars } from "@/lib/server/template";
 import type { SmsProvider } from "@/lib/server/providers/sms";
@@ -172,6 +173,20 @@ export async function dispatchScheduledMessage(
       .eq("id", requestId)
       .eq("status", "dispatching");
     return { status: "blocked", messageId: null, blockedReason: allowance.reason };
+  }
+
+  // FR-ADM-003: provider outage alatt globális vagy tenant send pause.
+  // UGYANAZ a minta, mint a 3.3 keret-kapunál -- a claim UTÁN, a provider-
+  // hívás ELŐTT, és a sor `scheduled`-be kerül vissza (nem `failed`), mert a
+  // kérés maga rendben van, csak a szünet feloldására kell várni.
+  const pause = await checkSendPause(supabase, request.organization_id);
+  if (pause.paused) {
+    await supabase
+      .from("review_requests")
+      .update({ status: "scheduled", dispatch_claimed_at: null, updated_at: new Date().toISOString() })
+      .eq("id", requestId)
+      .eq("status", "dispatching");
+    return { status: "blocked", messageId: null, blockedReason: `send_paused:${pause.scope}:${pause.reason}` };
   }
 
   const suppressed = await isSuppressed(supabase, request.organization_id, channel, destination);
