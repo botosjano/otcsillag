@@ -23,12 +23,19 @@ export type SubscriptionTransition = {
  * A grace period pontos hosszát a spec nem adja meg számszerűen -- 7 nap
  * ésszerű, iparági szokásos alapérték (l. README "Nyitott döntések", ha
  * Janos mást szeretne, könnyen paraméterezhető).
+ *
+ * A türelmi idő az ELSŐ sikertelen fizetéstől számított fix ablak: egy már
+ * `past_due` előfizetésre érkező újabb `payment_failed` (Stripe smart-retry)
+ * nem tolja ki a `grace_period_ends_at`-ot, különben a hetekig tartó retry
+ * korlátlanul meghosszabbítaná. Ehhez kell a jelenlegi határidő
+ * (`currentGracePeriodEndsAt`); ha past_due-ban mégis hiányzik, most állítjuk be.
  */
 export function nextSubscriptionStatus(
   current: SubscriptionStatus,
   event: BillingEvent,
   now: Date,
   gracePeriodDays: number = DEFAULT_GRACE_PERIOD_DAYS,
+  currentGracePeriodEndsAt: string | null = null,
 ): SubscriptionTransition {
   switch (event.type) {
     case "payment_succeeded":
@@ -40,6 +47,9 @@ export function nextSubscriptionStatus(
         // Egy lemondott/felfüggesztett előfizetésen a fizetési hiba nem
         // állapotváltás -- nincs mit "tovább rontani".
         return { status: current, gracePeriodEndsAt: null };
+      }
+      if (current === "past_due" && currentGracePeriodEndsAt) {
+        return { status: "past_due", gracePeriodEndsAt: null };
       }
       return {
         status: "past_due",
