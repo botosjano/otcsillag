@@ -21,6 +21,22 @@ describe("nextSubscriptionStatus (FR-BILL-001/006)", () => {
     expect(result.gracePeriodEndsAt).toBe(new Date(NOW.getTime() + 7 * 86_400_000).toISOString());
   });
 
+  it("a repeated payment_failed on past_due keeps the grace deadline from the first failure", () => {
+    const firstDeadline = new Date(NOW.getTime() + 7 * 86_400_000).toISOString();
+    const retryAt = new Date(NOW.getTime() + 5 * 86_400_000);
+    expect(nextSubscriptionStatus("past_due", { type: "payment_failed" }, retryAt, 7, firstDeadline)).toEqual({
+      status: "past_due",
+      gracePeriodEndsAt: null,
+    });
+  });
+
+  it("payment_failed on past_due without a stored deadline sets one", () => {
+    expect(nextSubscriptionStatus("past_due", { type: "payment_failed" }, NOW, 7, null)).toEqual({
+      status: "past_due",
+      gracePeriodEndsAt: new Date(NOW.getTime() + 7 * 86_400_000).toISOString(),
+    });
+  });
+
   it("payment_failed on an already-cancelled/suspended subscription is a no-op", () => {
     expect(nextSubscriptionStatus("cancelled", { type: "payment_failed" }, NOW)).toEqual({
       status: "cancelled",

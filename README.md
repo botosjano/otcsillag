@@ -203,9 +203,11 @@ függés.
    jelenleg minden alkalommal újra +7 napra tolja a `grace_period_ends_at`-ot
    a hívás pillanatától. Ha a Stripe hetekig retry-zik, ez gyakorlatilag
    korlátlanul meghosszabbítja a türelmi időt. A másik olvasat: a türelmi idő
-   az ELSŐ sikertelen fizetéstől számított fix ablak. A spec nem dönt, ezért
-   ez ma tudatosan a "mindig +7 nap a legutóbbi hibától" ágon áll -- Janos
-   döntése kell hozzá, mert bevételi hatása van.
+   az ELSŐ sikertelen fizetéstől számított fix ablak. **Javasolt döntés
+   (fix/grace-period-first-failure):** az első hibától számított fix ablak --
+   past_due állapotban az újabb `payment_failed` a meglévő határidőt nem
+   módosítja, csak ha nincs tárolt határidő, akkor állít be egyet. Bevételi
+   hatása miatt a merge Janos döntése.
 4. **Ütemező-infra** -- `POST /api/cron/billing-sweep` ugyanarra a
    megoldatlan hosting-kérdésre vár, mint a `dispatch` cron (l. az előző
    szakasz 3. pontja).

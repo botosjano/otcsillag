@@ -36,14 +36,20 @@ export async function processStripeWebhookEvent(
 
   const { data: subscription, error: fetchError } = await supabase
     .from("subscriptions")
-    .select("id, status, organization_id")
+    .select("id, status, organization_id, grace_period_ends_at")
     .eq("organization_id", organizationId)
     .neq("status", "cancelled")
     .maybeSingle();
   if (fetchError) throw new Error(`processStripeWebhookEvent lookup failed: ${fetchError.message}`);
   if (!subscription) return { outcome: "unknown_organization" };
 
-  const transition = nextSubscriptionStatus(subscription.status as SubscriptionStatus, billingEvent, new Date());
+  const transition = nextSubscriptionStatus(
+    subscription.status as SubscriptionStatus,
+    billingEvent,
+    new Date(),
+    undefined,
+    subscription.grace_period_ends_at,
+  );
   const update: Record<string, unknown> = { status: transition.status, updated_at: new Date().toISOString() };
   if (transition.gracePeriodEndsAt === "clear") update.grace_period_ends_at = null;
   else if (transition.gracePeriodEndsAt !== null) update.grace_period_ends_at = transition.gracePeriodEndsAt;
